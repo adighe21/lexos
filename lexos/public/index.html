@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>LexOS — AI Legal Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --navy:#0B1628;--navy2:#111F38;--navy3:#172540;
+  --gold:#C9A84C;--gold2:#E8C96A;
+  --cream:#F8F4ED;--cream2:#F0EAE0;
+  --text:#1a1a2e;--muted:#6B7280;--light:#9CA3AF;
+  --white:#ffffff;--border:#E5DDD0;--border2:#D4C9B8;
+  --green:#2D6A4F;--red:#C0392B;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--cream);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;}
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;border-bottom:1px solid rgba(201,168,76,0.2);z-index:100;}
+.logo{display:flex;align-items:center;gap:8px;}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.logo-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--white);font-weight:600;}
+.logo-tag{color:rgba(201,168,76,0.6);font-size:10px;font-weight:300;letter-spacing:1px;display:none;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.topbar-btn{padding:6px 12px;border-radius:6px;border:1px solid rgba(201,168,76,0.4);background:transparent;color:var(--gold);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap;}
+.topbar-btn-hide{display:none;}
+.topbar-user-avatar{width:30px;height:30px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:var(--navy);flex-shrink:0;}
+.hamburger{display:flex;flex-direction:column;gap:4px;cursor:pointer;padding:6px;background:none;border:none;}
+.hamburger span{display:block;width:20px;height:2px;background:rgba(255,255,255,0.7);border-radius:2px;transition:all 0.2s;}
+
+/* APP LAYOUT */
+.app{display:flex;flex:1;overflow:hidden;position:relative;}
+
+/* SIDEBAR OVERLAY (mobile) */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;}
+.sidebar-overlay.open{display:block;}
+
+/* SIDEBAR */
+.sidebar{width:270px;background:var(--navy2);border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s ease;z-index:200;}
+.sidebar-section{padding:16px 16px 6px;color:rgba(201,168,76,0.5);font-size:10px;letter-spacing:2px;font-weight:500;text-transform:uppercase;}
+.sidebar-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-radius:8px;margin:1px 8px;transition:all 0.15s;}
+.sidebar-item:hover,.sidebar-item:active{background:rgba(255,255,255,0.05);}
+.sidebar-item.active{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.2);}
+.sidebar-item-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
+.sidebar-item-text{color:rgba(255,255,255,0.7);font-size:13px;font-weight:400;}
+.sidebar-item.active .sidebar-item-text{color:var(--gold2);font-weight:500;}
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.06);margin:10px 16px;}
+.sidebar-new-btn{margin:12px;padding:11px;border-radius:8px;background:var(--gold);border:none;color:var(--navy);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* WELCOME */
+.welcome{flex:1;overflow-y:auto;padding:24px 16px;-webkit-overflow-scrolling:touch;}
+.welcome-top{text-align:center;margin-bottom:28px;}
+.welcome-greeting{font-family:'Playfair Display',serif;font-size:24px;color:var(--navy);font-weight:600;margin-bottom:6px;}
+.welcome-sub{color:var(--muted);font-size:14px;line-height:1.6;}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;}
+.agent-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.05);}
+.agent-card:active{transform:scale(0.98);}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color);border-radius:14px 14px 0 0;}
+.agent-card-icon{font-size:22px;margin-bottom:8px;}
+.agent-card-name{font-family:'Playfair Display',serif;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.agent-card-desc{color:var(--muted);font-size:11px;line-height:1.5;display:none;}
+.agent-card-tag{margin-top:8px;font-size:10px;color:var(--card-color);font-weight:600;}
+.quick-section{text-align:center;}
+.quick-label{color:var(--muted);font-size:13px;margin-bottom:12px;}
+.quick-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.chip{padding:8px 14px;border-radius:20px;background:var(--white);border:1.5px solid var(--border);color:var(--text);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;}
+.chip:active{background:rgba(201,168,76,0.08);border-color:var(--gold);}
+
+/* CHAT */
+.chat-screen{flex:1;display:flex;flex-direction:column;overflow:hidden;display:none;}
+.chat-header{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--white);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.chat-header-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.chat-header-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--navy);}
+.chat-header-status{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px;margin-top:1px;}
+.chat-header-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;}
+.chat-back-btn{margin-left:auto;padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap;flex-shrink:0;}
+.disclaimer{margin:10px 12px 0;background:rgba(211,84,0,0.06);border:1px solid rgba(211,84,0,0.15);border-radius:8px;padding:8px 12px;display:flex;gap:8px;align-items:flex-start;}
+.disclaimer-icon{font-size:13px;flex-shrink:0;}
+.disclaimer span{font-size:11px;color:#D35400;line-height:1.4;font-weight:500;}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch;}
+.msg{display:flex;gap:10px;max-width:85%;animation:fadeUp 0.25s ease;}
+.msg.user{flex-direction:row-reverse;margin-left:auto;}
+.msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px;}
+.msg.assistant .msg-avatar{background:var(--navy);color:var(--gold);}
+.msg.user .msg-avatar{background:var(--gold);color:var(--navy);font-weight:700;font-size:11px;}
+.msg-content{}
+.msg-agent-label{font-size:10px;color:var(--gold);font-weight:600;margin-bottom:4px;}
+.msg-bubble{padding:12px 14px;border-radius:14px;font-size:13px;line-height:1.7;}
+.msg.assistant .msg-bubble{background:var(--white);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+.msg.user .msg-bubble{background:var(--navy);color:rgba(255,255,255,0.92);border-top-right-radius:4px;}
+.msg-time{font-size:10px;color:var(--light);margin-top:4px;}
+.msg.user .msg-time{text-align:right;}
+.typing{display:flex;align-items:center;gap:5px;padding:12px 14px;background:var(--white);border:1px solid var(--border);border-radius:14px;border-top-left-radius:4px;width:fit-content;}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:bounce 1.2s ease infinite;}
+.typing span:nth-child(2){animation-delay:0.2s;}
+.typing span:nth-child(3){animation-delay:0.4s;}
+.chat-input-area{padding:12px;border-top:1px solid var(--border);background:var(--white);flex-shrink:0;}
+.chat-input-wrap{display:flex;gap:10px;align-items:flex-end;background:var(--cream);border:2px solid var(--border2);border-radius:12px;padding:10px 12px;transition:border-color 0.2s;}
+.chat-input-wrap:focus-within{border-color:var(--gold);}
+.chat-input{flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);resize:none;max-height:100px;line-height:1.5;font-weight:500;}
+.chat-input::placeholder{color:var(--light);}
+.send-btn{width:38px;height:38px;border-radius:10px;background:var(--navy);border:none;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all 0.2s;}
+.send-btn:disabled{background:var(--border2);color:var(--light);}
+.input-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:0 2px;}
+.input-bottom span{font-size:10px;color:var(--light);}
+.rag-toggle{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--muted);font-weight:500;}
+.rag-toggle input{accent-color:var(--gold);}
+
+/* MARKETING */
+.marketing{flex:1;overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;}
+.hero{background:var(--navy);padding:48px 20px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,0.08) 0%,transparent 60%);}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);border-radius:20px;padding:4px 12px;margin-bottom:20px;color:var(--gold2);font-size:10px;letter-spacing:2px;font-weight:600;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(30px,7vw,60px);color:var(--white);line-height:1.15;margin-bottom:16px;font-weight:700;}
+.hero h1 em{color:var(--gold2);font-style:normal;}
+.hero-sub{color:rgba(255,255,255,0.55);font-size:15px;margin:0 auto 28px;line-height:1.7;font-weight:300;}
+.hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;}
+.btn-gold{padding:12px 24px;border-radius:8px;background:var(--gold);border:none;color:var(--navy);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-outline{padding:12px 24px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+.hero-stats{display:grid;grid-template-columns:repeat(2,1fr);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;max-width:500px;margin:0 auto;}
+.hero-stat{padding:16px;border-right:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08);text-align:center;}
+.hero-stat:nth-child(2n){border-right:none;}
+.hero-stat-val{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold2);font-weight:600;}
+.hero-stat-label{color:rgba(255,255,255,0.4);font-size:10px;margin-top:2px;letter-spacing:1px;}
+.mkt-section{padding:48px 20px;}
+.section-eyebrow{color:var(--gold);font-size:10px;letter-spacing:3px;font-weight:700;text-transform:uppercase;margin-bottom:8px;}
+.section-title{font-family:'Playfair Display',serif;font-size:28px;color:var(--navy);font-weight:700;margin-bottom:10px;line-height:1.2;}
+.section-sub{color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:28px;}
+.use-cases-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+.use-case-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,0.04);}
+.use-case-icon{font-size:26px;margin-bottom:10px;}
+.use-case-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--navy);font-weight:600;margin-bottom:6px;}
+.use-case-desc{color:var(--muted);font-size:13px;line-height:1.6;}
+.use-case-time{margin-top:10px;font-size:11px;color:var(--green);font-weight:600;}
+.how-section{padding:48px 20px;background:var(--navy);}
+.how-section .section-title{color:var(--white);}
+.how-section .section-sub{color:rgba(255,255,255,0.45);}
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px;}
+.step{text-align:center;}
+.step-num{width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:16px;color:var(--gold2);margin:0 auto 12px;}
+.step-title{color:var(--white);font-weight:600;font-size:13px;margin-bottom:6px;}
+.step-desc{color:rgba(255,255,255,0.4);font-size:12px;line-height:1.5;}
+.testimonials-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:28px;}
+.testimonial{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.testimonial-quote{color:var(--text);font-size:13px;line-height:1.7;margin-bottom:14px;font-style:italic;}
+.testimonial-author{display:flex;align-items:center;gap:10px;}
+.testimonial-avatar{width:36px;height:36px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:700;font-size:12px;}
+.testimonial-name{font-weight:600;font-size:13px;color:var(--navy);}
+.testimonial-role{font-size:11px;color:var(--muted);}
+.stars{color:var(--gold);font-size:12px;margin-bottom:10px;}
+.pricing-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:28px;}
+.price-card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:28px;position:relative;}
+.price-card.featured{background:var(--navy);border-color:var(--gold);}
+.price-popular{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;white-space:nowrap;}
+.price-plan{font-size:11px;letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
+.price-card:not(.featured) .price-plan{color:var(--muted);}
+.price-card.featured .price-plan{color:var(--gold);}
+.price-amount{display:flex;align-items:baseline;gap:4px;margin-bottom:4px;}
+.price-amount .amount{font-family:'Playfair Display',serif;font-size:38px;font-weight:700;}
+.price-card:not(.featured) .price-amount .amount{color:var(--navy);}
+.price-card.featured .price-amount .amount{color:var(--white);}
+.price-period{font-size:13px;color:var(--muted);}
+.price-card.featured .price-period{color:rgba(255,255,255,0.4);}
+.price-desc{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+.price-card.featured .price-desc{color:rgba(255,255,255,0.5);}
+.price-cta{width:100%;padding:12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:20px;}
+.price-card:not(.featured) .price-cta{background:transparent;border:1.5px solid var(--navy);color:var(--navy);}
+.price-card.featured .price-cta{background:var(--gold);border:none;color:var(--navy);}
+.price-features{display:flex;flex-direction:column;gap:8px;}
+.price-feat{display:flex;gap:8px;font-size:12px;}
+.price-card:not(.featured) .price-feat{color:var(--muted);}
+.price-card.featured .price-feat{color:rgba(255,255,255,0.75);}
+.price-feat-check{color:var(--green);flex-shrink:0;}
+.price-card.featured .price-feat-check{color:var(--gold);}
+.footer-cta-section{padding:60px 20px;background:var(--navy2);text-align:center;}
+.footer-cta-section h2{font-family:'Playfair Display',serif;font-size:30px;color:var(--white);margin-bottom:12px;line-height:1.2;}
+.footer-cta-section p{color:rgba(255,255,255,0.45);font-size:14px;margin-bottom:28px;line-height:1.6;}
+.footer-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.footer-bar{padding:16px 20px;background:var(--navy);border-top:1px solid rgba(255,255,255,0.06);}
+.footer-bar span{font-size:11px;color:rgba(255,255,255,0.2);display:block;text-align:center;line-height:1.8;}
+
+/* DESKTOP ENHANCEMENTS */
+@media(min-width:768px){
+  .topbar{height:60px;padding:0 28px;}
+  .logo-name{font-size:20px;}
+  .logo-tag{display:inline;}
+  .topbar-btn-hide{display:flex;}
+  .hamburger{display:none;}
+  .sidebar{transform:none !important;position:relative;}
+  .sidebar-overlay{display:none !important;}
+  .agent-grid{grid-template-columns:repeat(3,1fr);gap:16px;}
+  .agent-card-desc{display:block;}
+  .agent-card-icon{font-size:26px;}
+  .agent-card-name{font-size:15px;}
+  .welcome{padding:40px 32px;}
+  .welcome-greeting{font-size:30px;}
+  .chat-header{padding:14px 24px;}
+  .chat-messages{padding:20px 24px;}
+  .chat-input-area{padding:14px 24px;}
+  .msg{max-width:75%;}
+  .msg-bubble{font-size:14px;}
+  .disclaimer{margin:12px 20px 0;}
+  .hero{padding:72px 60px;}
+  .mkt-section{padding:64px 60px;}
+  .how-section{padding:64px 60px;}
+  .use-cases-grid{grid-template-columns:repeat(3,1fr);}
+  .steps{grid-template-columns:repeat(4,1fr);}
+  .testimonials-grid{grid-template-columns:repeat(3,1fr);}
+  .pricing-grid{grid-template-columns:repeat(3,1fr);}
+  .hero-stats{grid-template-columns:repeat(4,1fr);}
+  .hero-stat:nth-child(2n){border-right:1px solid rgba(255,255,255,0.08);}
+  .hero-stat:nth-child(4n){border-right:none;}
+  .hero-stat{border-bottom:none;}
+  .footer-cta-section{padding:72px 60px;}
+  .footer-cta-section h2{font-size:40px;}
+  .footer-bar{display:flex;justify-content:space-between;padding:18px 60px;}
+  .footer-bar span{display:inline;}
+}
+
+/* Mobile sidebar slide-in */
+@media(max-width:767px){
+  .sidebar{position:fixed;top:56px;left:0;bottom:0;z-index:200;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+}
+
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="hamburger" onclick="toggleSidebar()" id="hamburger-btn">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="logo">
+      <div class="logo-mark">⚖</div>
+      <span class="logo-name">LexOS</span>
+      <span class="logo-tag">LEGAL AI</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-btn topbar-btn-hide" onclick="showMarketing()">About</button>
+    <button class="topbar-btn topbar-btn-hide" onclick="showPricing()">Pricing</button>
+    <button class="topbar-btn" onclick="showWelcome()" style="background:rgba(201,168,76,0.15);">App</button>
+    <div class="topbar-user-avatar">JD</div>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-new-btn" onclick="showWelcome();closeSidebar()">✦ New Conversation</button>
+    <div class="sidebar-section">Legal Assistants</div>
+    <div class="sidebar-item" onclick="openAgent('research');closeSidebar()" id="nav-research"><span class="sidebar-item-icon">🔍</span><span class="sidebar-item-text">Case Law Research</span></div>
+    <div class="sidebar-item" onclick="openAgent('contract');closeSidebar()" id="nav-contract"><span class="sidebar-item-icon">📄</span><span class="sidebar-item-text">Contract Review</span></div>
+    <div class="sidebar-item" onclick="openAgent('discovery');closeSidebar()" id="nav-discovery"><span class="sidebar-item-icon">🗂</span><span class="sidebar-item-text">Discovery Assistant</span></div>
+    <div class="sidebar-item" onclick="openAgent('memo');closeSidebar()" id="nav-memo"><span class="sidebar-item-icon">✍️</span><span class="sidebar-item-text">Legal Memo Drafting</span></div>
+    <div class="sidebar-item" onclick="openAgent('deposition');closeSidebar()" id="nav-deposition"><span class="sidebar-item-icon">🎙</span><span class="sidebar-item-text">Deposition Prep</span></div>
+    <div class="sidebar-item" onclick="openAgent('compliance');closeSidebar()" id="nav-compliance"><span class="sidebar-item-icon">✅</span><span class="sidebar-item-text">Compliance Check</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Recent</div>
+    <div class="sidebar-item"><span class="sidebar-item-icon">🕐</span><span class="sidebar-item-text" style="font-size:12px;color:rgba(255,255,255,0.35)">Smith v. Henderson</span></div>
+    <div class="sidebar-item"><span class="sidebar-item-icon">🕐</span><span class="sidebar-item-text" style="font-size:12px;color:rgba(255,255,255,0.35)">NDA Review — Acme</span></div>
+  </div>
+
+  <div class="main">
+    <!-- WELCOME -->
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-top">
+        <div class="welcome-greeting">Good morning, Counselor.</div>
+        <div class="welcome-sub">What legal matter can I help with today?</div>
+      </div>
+      <div class="agent-grid">
+        <div class="agent-card" style="--card-color:#1B4F8A" onclick="openAgent('research')"><div class="agent-card-icon">🔍</div><div class="agent-card-name">Case Law Research</div><div class="agent-card-desc">Find relevant precedents across any jurisdiction instantly.</div><div class="agent-card-tag">⚡ Saves 4–6 hrs per brief</div></div>
+        <div class="agent-card" style="--card-color:#2D6A4F" onclick="openAgent('contract')"><div class="agent-card-icon">📄</div><div class="agent-card-name">Contract Review</div><div class="agent-card-desc">Identify risk clauses and missing provisions.</div><div class="agent-card-tag">⚡ Review in minutes</div></div>
+        <div class="agent-card" style="--card-color:#7B3F00" onclick="openAgent('discovery')"><div class="agent-card-icon">🗂</div><div class="agent-card-name">Discovery Assistant</div><div class="agent-card-desc">Organize and summarize discovery documents.</div><div class="agent-card-tag">⚡ Process 1000s of docs</div></div>
+        <div class="agent-card" style="--card-color:#5B2D8E" onclick="openAgent('memo')"><div class="agent-card-icon">✍️</div><div class="agent-card-name">Memo Drafting</div><div class="agent-card-desc">Draft legal memos and briefs fast.</div><div class="agent-card-tag">⚡ First draft in 60s</div></div>
+        <div class="agent-card" style="--card-color:#8B1A1A" onclick="openAgent('deposition')"><div class="agent-card-icon">🎙</div><div class="agent-card-name">Deposition Prep</div><div class="agent-card-desc">Generate targeted question sets.</div><div class="agent-card-tag">⚡ Walk in prepared</div></div>
+        <div class="agent-card" style="--card-color:#1B6B6B" onclick="openAgent('compliance')"><div class="agent-card-icon">✅</div><div class="agent-card-name">Compliance Check</div><div class="agent-card-desc">Audit against GDPR, HIPAA, SOX.</div><div class="agent-card-tag">⚡ Instant review</div></div>
+      </div>
+      <div class="quick-section">
+        <div class="quick-label">Try a quick example:</div>
+        <div class="quick-chips">
+          <div class="chip" onclick="quickPrompt('research','Summarize the key precedents for workplace discrimination cases in federal courts since 2020')">Discrimination precedents</div>
+          <div class="chip" onclick="quickPrompt('contract','Review this NDA for any one-sided or overly broad confidentiality clauses')">NDA risk review</div>
+          <div class="chip" onclick="quickPrompt('compliance','What are the key GDPR compliance requirements for a SaaS company handling EU customer data?')">GDPR requirements</div>
+          <div class="chip" onclick="quickPrompt('memo','Draft a legal memo on the enforceability of non-compete agreements in California')">Non-compete memo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat-screen" id="chat-screen">
+      <div class="chat-header">
+        <div class="chat-header-icon" id="chat-header-icon">🔍</div>
+        <div>
+          <div class="chat-header-name" id="chat-header-name">Case Law Research</div>
+          <div class="chat-header-status">Active · AI-powered</div>
+        </div>
+        <button class="chat-back-btn" onclick="showWelcome()">← Back</button>
+      </div>
+      <div class="disclaimer"><span class="disclaimer-icon">⚠️</span><span><strong>AI Assistant:</strong> Always verify outputs with authoritative sources. Not legal advice.</span></div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-area">
+        <div class="chat-input-wrap">
+          <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ask your legal question..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">→</button>
+        </div>
+        <div class="input-bottom">
+          <span>Enter to send</span>
+          <label class="rag-toggle"><input type="checkbox" id="use-rag" checked/> Knowledge base</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETING -->
+    <div class="marketing" id="marketing-page">
+      <div class="hero">
+        <div class="hero-eyebrow">✦ TRUSTED BY 200+ LAW FIRMS</div>
+        <h1>Your AI Legal Team,<br><em>Available 24/7</em></h1>
+        <p class="hero-sub">AI-powered assistants for research, contract review, discovery, and drafting — in a secure, purpose-built platform.</p>
+        <div class="hero-btns">
+          <button class="btn-gold" onclick="showWelcome()">Start Free Trial</button>
+          <button class="btn-outline" onclick="showPricing()">View Pricing</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="hero-stat-val">6 hrs</div><div class="hero-stat-label">Saved per brief</div></div>
+          <div class="hero-stat"><div class="hero-stat-val">200+</div><div class="hero-stat-label">Law firms</div></div>
+          <div class="hero-stat"><div class="hero-stat-val">98%</div><div class="hero-stat-label">Accuracy</div></div>
+          <div class="hero-stat"><div class="hero-stat-val">60s</div><div class="hero-stat-label">First draft</div></div>
+        </div>
+      </div>
+      <div class="mkt-section" style="background:var(--white)">
+        <div class="section-eyebrow">What LexOS Does</div>
+        <div class="section-title">Built for Every Legal Task</div>
+        <div class="section-sub">Six specialized AI assistants, each trained for a specific legal workflow.</div>
+        <div class="use-cases-grid">
+          <div class="use-case-card"><div class="use-case-icon">🔍</div><div class="use-case-title">Case Law Research</div><div class="use-case-desc">Find relevant precedents, circuit splits, and statutory interpretations across any jurisdiction.</div><div class="use-case-time">✓ Replaces 4–6 hours of manual research</div></div>
+          <div class="use-case-card"><div class="use-case-icon">📄</div><div class="use-case-title">Contract Review</div><div class="use-case-desc">Automatically flag risky clauses, missing provisions, and liability exposure in any contract.</div><div class="use-case-time">✓ Full review in under 5 minutes</div></div>
+          <div class="use-case-card"><div class="use-case-icon">🗂</div><div class="use-case-title">Discovery Processing</div><div class="use-case-desc">Find key facts, identify privilege issues, and build timelines from discovery materials.</div><div class="use-case-time">✓ Process 10,000+ docs overnight</div></div>
+          <div class="use-case-card"><div class="use-case-icon">✍️</div><div class="use-case-title">Memo & Brief Drafting</div><div class="use-case-desc">Generate first drafts of legal memos, demand letters, and briefs — structured and cited.</div><div class="use-case-time">✓ First draft in 60 seconds</div></div>
+          <div class="use-case-card"><div class="use-case-icon">🎙</div><div class="use-case-title">Deposition Preparation</div><div class="use-case-desc">Build comprehensive question sets and anticipate witness responses.</div><div class="use-case-time">✓ Walk into every deposition prepared</div></div>
+          <div class="use-case-card"><div class="use-case-icon">✅</div><div class="use-case-title">Compliance Auditing</div><div class="use-case-desc">Check documents against GDPR, HIPAA, SOX, CCPA and other frameworks.</div><div class="use-case-time">✓ Audit in hours, not weeks</div></div>
+        </div>
+      </div>
+      <div class="how-section">
+        <div class="section-eyebrow" style="color:var(--gold)">How It Works</div>
+        <div class="section-title">Simple as Asking a Question</div>
+        <div class="section-sub">No training needed. Just ask — like you would a colleague.</div>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-title">Choose an Assistant</div><div class="step-desc">Select the legal task you need help with.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-title">Ask Your Question</div><div class="step-desc">Type naturally or paste your document.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-title">Get Structured Output</div><div class="step-desc">Receive detailed, cited analysis.</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-title">Refine & Export</div><div class="step-desc">Continue the conversation and copy to your workflow.</div></div>
+        </div>
+      </div>
+      <div class="mkt-section">
+        <div class="section-eyebrow">What Attorneys Say</div>
+        <div class="section-title">Trusted by Legal Professionals</div>
+        <div class="testimonials-grid">
+          <div class="testimonial"><div class="stars">★★★★★</div><div class="testimonial-quote">"LexOS cut my research time in half. I have a comprehensive memo in under an hour."</div><div class="testimonial-author"><div class="testimonial-avatar">SM</div><div><div class="testimonial-name">Sarah Mitchell</div><div class="testimonial-role">Partner, Mitchell & Associates</div></div></div></div>
+          <div class="testimonial"><div class="stars">★★★★★</div><div class="testimonial-quote">"The contract review assistant caught a liability clause our team missed on a $2M deal."</div><div class="testimonial-author"><div class="testimonial-avatar">RK</div><div><div class="testimonial-name">Robert Kim</div><div class="testimonial-role">General Counsel, TechVenture Inc.</div></div></div></div>
+          <div class="testimonial"><div class="stars">★★★★★</div><div class="testimonial-quote">"Finally an AI tool built for lawyers, not developers. My paralegals were running in 20 minutes."</div><div class="testimonial-author"><div class="testimonial-avatar">AP</div><div><div class="testimonial-name">Angela Park</div><div class="testimonial-role">Managing Partner, Park Legal Group</div></div></div></div>
+        </div>
+      </div>
+      <div class="mkt-section" id="pricing-anchor" style="background:var(--cream2)">
+        <div class="section-eyebrow">Pricing</div>
+        <div class="section-title">Simple, Transparent Pricing</div>
+        <div class="section-sub">Start free. Cancel anytime. All plans include every assistant.</div>
+        <div class="pricing-grid">
+          <div class="price-card"><div class="price-plan">Solo Attorney</div><div class="price-amount"><span class="amount">$299</span><span class="price-period">/mo</span></div><div class="price-desc">Perfect for solo practitioners.</div><button class="price-cta">Start Free Trial</button><div class="price-features"><div class="price-feat"><span class="price-feat-check">✓</span>All 6 legal assistants</div><div class="price-feat"><span class="price-feat-check">✓</span>500 queries/month</div><div class="price-feat"><span class="price-feat-check">✓</span>Document upload</div><div class="price-feat"><span class="price-feat-check">✓</span>Export to Word/PDF</div><div class="price-feat"><span class="price-feat-check">✓</span>Email support</div></div></div>
+          <div class="price-card featured"><div class="price-popular">Most Popular</div><div class="price-plan">Small Firm</div><div class="price-amount"><span class="amount">$799</span><span class="price-period">/mo</span></div><div class="price-desc">For firms of 2–15 attorneys.</div><button class="price-cta">Start Free Trial</button><div class="price-features"><div class="price-feat"><span class="price-feat-check">✓</span>Everything in Solo</div><div class="price-feat"><span class="price-feat-check">✓</span>Up to 15 users</div><div class="price-feat"><span class="price-feat-check">✓</span>Unlimited queries</div><div class="price-feat"><span class="price-feat-check">✓</span>Private knowledge base</div><div class="price-feat"><span class="price-feat-check">✓</span>Priority support</div></div></div>
+          <div class="price-card"><div class="price-plan">Enterprise</div><div class="price-amount"><span class="amount">Custom</span></div><div class="price-desc">For large firms and legal departments.</div><button class="price-cta">Contact Sales</button><div class="price-features"><div class="price-feat"><span class="price-feat-check">✓</span>Unlimited users</div><div class="price-feat"><span class="price-feat-check">✓</span>Private cloud deployment</div><div class="price-feat"><span class="price-feat-check">✓</span>Custom AI fine-tuning</div><div class="price-feat"><span class="price-feat-check">✓</span>SSO + SOC 2</div><div class="price-feat"><span class="price-feat-check">✓</span>Dedicated engineer</div></div></div>
+        </div>
+      </div>
+      <div class="footer-cta-section">
+        <h2>Ready to Modernize Your Practice?</h2>
+        <p>Join 200+ law firms saving hours every week. Start your free 14-day trial — no credit card required.</p>
+        <div class="footer-btns"><button class="btn-gold" onclick="showWelcome()">Start Free Trial →</button></div>
+      </div>
+      <div class="footer-bar"><span>© 2025 LexOS · AI Legal Platform · Not a law firm · Always verify AI outputs with licensed counsel</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AGENTS = {
+  research:{name:"Case Law Research",icon:"🔍",color:"#1B4F8A",api_type:"research",placeholder:"e.g. What are the key precedents for breach of fiduciary duty in Delaware?",welcome:"Hello, Counselor. I specialize in case law research, statutory analysis, and legal precedent across federal and state jurisdictions.\n\nWhat legal research can I help you with today?"},
+  contract:{name:"Contract Review",icon:"📄",color:"#2D6A4F",api_type:"research",placeholder:"e.g. Review this NDA clause: 'Recipient agrees to keep all information confidential for 10 years...'",welcome:"I'm your Contract Review assistant. Paste any contract clause or full agreement and I'll identify risks, flag non-standard language, and suggest revisions.\n\nPaste your contract text or describe what you need reviewed."},
+  discovery:{name:"Discovery Assistant",icon:"🗂",color:"#7B3F00",api_type:"data",placeholder:"e.g. Summarize the key facts from these deposition excerpts and identify any inconsistencies...",welcome:"I help organize documents, identify key facts, build timelines, and flag privilege issues across large volumes of discovery materials.\n\nDescribe your matter or paste document excerpts to get started."},
+  memo:{name:"Legal Memo Drafting",icon:"✍️",color:"#5B2D8E",api_type:"research",placeholder:"e.g. Draft a memo on the legal standard for preliminary injunctions in the 9th Circuit...",welcome:"I draft legal memos, briefs, demand letters, and client communications. Give me the matter, jurisdiction, and key facts — I'll produce a structured first draft.\n\nWhat would you like me to draft?"},
+  deposition:{name:"Deposition Preparation",icon:"🎙",color:"#8B1A1A",api_type:"research",placeholder:"e.g. Generate deposition questions for a CFO in a securities fraud case...",welcome:"I help attorneys prepare for depositions. Describe the witness and case theory — I'll generate targeted question sets and anticipate likely responses.\n\nTell me about the deposition you're preparing for."},
+  compliance:{name:"Compliance Check",icon:"✅",color:"#1B6B6B",api_type:"research",placeholder:"e.g. Does this privacy policy comply with GDPR Article 13 disclosure requirements?",welcome:"I audit documents and practices against GDPR, HIPAA, SOX, CCPA, and other frameworks. I'll identify gaps and suggest remediation steps.\n\nWhat compliance framework or document would you like reviewed?"},
+};
+
+let currentAgent=null,isLoading=false;
+
+function toggleSidebar(){
+  const s=document.getElementById('sidebar');
+  const o=document.getElementById('sidebar-overlay');
+  s.classList.toggle('open');
+  o.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+function showWelcome(){
+  document.getElementById('welcome-screen').style.display='block';
+  document.getElementById('chat-screen').style.display='none';
+  document.getElementById('marketing-page').style.display='none';
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  currentAgent=null;
+}
+function showMarketing(){
+  document.getElementById('welcome-screen').style.display='none';
+  document.getElementById('chat-screen').style.display='none';
+  document.getElementById('marketing-page').style.display='block';
+  document.getElementById('marketing-page').scrollTop=0;
+}
+function showPricing(){showMarketing();setTimeout(()=>document.getElementById('pricing-anchor').scrollIntoView({behavior:'smooth'}),100);}
+function openAgent(id){
+  currentAgent=AGENTS[id];
+  document.getElementById('welcome-screen').style.display='none';
+  document.getElementById('chat-screen').style.display='flex';
+  document.getElementById('marketing-page').style.display='none';
+  document.getElementById('chat-header-icon').textContent=currentAgent.icon;
+  document.getElementById('chat-header-icon').style.background=currentAgent.color+'22';
+  document.getElementById('chat-header-name').textContent=currentAgent.name;
+  document.getElementById('chat-input').placeholder=currentAgent.placeholder;
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  const nav=document.getElementById('nav-'+id);
+  if(nav)nav.classList.add('active');
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML='';
+  addMessage('assistant',currentAgent.welcome);
+}
+function quickPrompt(agentId,prompt){openAgent(agentId);setTimeout(()=>{document.getElementById('chat-input').value=prompt;sendMessage();},300);}
+function addMessage(role,text){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(role==='assistant'){
+    div.innerHTML=`<div class="msg-avatar">⚖</div><div class="msg-content"><div class="msg-agent-label">${currentAgent?.icon||'⚖'} ${currentAgent?.name||'LexOS'}</div><div class="msg-bubble">${formatText(text)}</div><div class="msg-time">${time}</div></div>`;
+  }else{
+    div.innerHTML=`<div class="msg-content"><div class="msg-bubble">${escapeHtml(text)}</div><div class="msg-time">${time}</div></div><div class="msg-avatar">JD</div>`;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function showTyping(){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className='msg assistant';div.id='typing-indicator';
+  div.innerHTML=`<div class="msg-avatar">⚖</div><div class="typing"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function removeTyping(){const el=document.getElementById('typing-indicator');if(el)el.remove();}
+async function sendMessage(){
+  if(isLoading||!currentAgent)return;
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';input.style.height='auto';
+  addMessage('user',text);
+  isLoading=true;document.getElementById('send-btn').disabled=true;showTyping();
+  try{
+    const useRag=document.getElementById('use-rag').checked;
+    const res=await fetch('/api/agents/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agent_type:currentAgent.api_type,input:text,use_rag:useRag})});
+    const data=await res.json();
+    removeTyping();addMessage('assistant',data.result||data.error||'Something went wrong. Please try again.');
+  }catch(err){removeTyping();addMessage('assistant','Connection error. Please try again.');}
+  isLoading=false;document.getElementById('send-btn').disabled=false;
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function formatText(t){return escapeHtml(t).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^#{1,3} (.+)$/gm,'<strong style="display:block;margin-top:10px;color:var(--navy)">$1</strong>').replace(/^[•\-] (.+)$/gm,'<span style="display:block;padding-left:12px;margin:2px 0">• $1</span>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');}
+function escapeHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+showWelcome();
+</script>
+</body>
+</html>
